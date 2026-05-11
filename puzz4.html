@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PuzzledEra – puzz4</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: #ffffff; color: #0a0a0a; }
+
+/* ── Header ── */
+.site-header {
+  border-bottom: 0.5px solid rgba(0,0,0,0.1);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo-wrap { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-name { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.06em; color: #0a0a0a; }
+.back-link { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: #999; text-decoration: none; }
+.back-link:hover { color: #0a0a0a; }
+
+/* ── Layout ── */
+.puzzle-page { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; display: flex; gap: 2.5rem; align-items: flex-start; }
+
+/* ── Grid area ── */
+.grid-column { flex: 0 0 auto; }
+
+.puzzle-title-bar { margin-bottom: 1.25rem; }
+.puzzle-name { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 0.04em; }
+.puzzle-byline { font-size: 12px; color: #999; font-family: 'Space Mono', monospace; margin-top: 2px; }
+
+/* ── Clue banner (active clue shown above grid) ── */
+.clue-banner {
+  background: #0a0a0a;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Sans', sans-serif;
+}
+.clue-banner-num { font-family: 'Space Mono', monospace; font-size: 11px; opacity: 0.6; white-space: nowrap; }
+
+/* ── Crossword grid ── */
+.cw-grid {
+  display: grid;
+  border: 2px solid #0a0a0a;
+  width: fit-content;
+  user-select: none;
+}
+.cw-cell {
+  width: 42px;
+  height: 42px;
+  border: 0.5px solid #bbb;
+  position: relative;
+  background: #fff;
+}
+.cw-cell.black { background: #0a0a0a; border-color: #0a0a0a; }
+.cw-cell.highlighted { background: #e8f0fe; }
+.cw-cell.selected { background: #b3c9fd; }
+.cw-cell.correct { background: #d4edda !important; }
+.cw-cell.wrong { background: #f8d7da !important; }
+
+.cell-num {
+  position: absolute;
+  top: 2px; left: 3px;
+  font-size: 8px;
+  font-family: 'Space Mono', monospace;
+  color: #0a0a0a;
+  line-height: 1;
+  pointer-events: none;
+}
+.cell-input {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  border: none; outline: none;
+  background: transparent;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  color: #0a0a0a;
+  cursor: pointer;
+  caret-color: transparent;
+  padding-top: 8px;
+  text-transform: uppercase;
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.tool-btn {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #0a0a0a;
+  background: #fff;
+  color: #0a0a0a;
+  transition: background 0.12s, color 0.12s;
+}
+.tool-btn:hover { background: #0a0a0a; color: #fff; }
+.tool-btn.primary { background: #0a0a0a; color: #fff; }
+.tool-btn.primary:hover { background: #333; }
+
+/* ── Clues column ── */
+.clues-column {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: 2rem;
+}
+.clue-list { flex: 1 1 0; }
+.clue-list-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.clue-item {
+  display: flex;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 2px;
+}
+.clue-item:hover { background: #f5f5f5; }
+.clue-item.active { background: #0a0a0a; color: #fff; }
+.clue-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 1px;
+  min-width: 22px;
+  text-align: right;
+}
+.clue-item.active .clue-num { color: #aaa; }
+.clue-text { flex: 1; }
+
+/* ── Congrats overlay ── */
+.congrats {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  align-items: center; justify-content: center;
+}
+.congrats.show { display: flex; }
+.congrats-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 3rem;
+  text-align: center;
+  max-width: 360px;
+  width: 90%;
+}
+.congrats-title { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
+.congrats-sub { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+
+/* ── Footer ── */
+.site-footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #ccc;
+  border-top: 0.5px solid rgba(0,0,0,0.08);
+  margin-top: 3rem;
+}
+
+@media (max-width: 720px) {
+  .puzzle-page { flex-direction: column; }
+  .clues-column { flex-direction: column; }
+  .cw-cell { width: 28px; height: 28px; }
+  .cell-input { font-size: 13px; padding-top: 6px; }
+  .cell-num { font-size: 6px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="site-header">
+  <a href="/" class="logo-wrap">
+    <svg viewBox="0 0 80 80" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="2" width="34" height="34" fill="#fff" stroke="#0a0a0a" stroke-width="2.5"/>
+      <text x="5" y="12" font-family="-apple-system,sans-serif" font-size="7" fill="#0a0a0a">1</text>
+      <text x="19" y="19" font-family="Georgia,serif" font-size="21" font-weight="bold" fill="#0a0a0a" text-anchor="middle" dominant-baseline="central">P</text>
+      <rect x="44" y="2" width="34" height="34" fill="#0a0a0a"/>
+      <rect x="2" y="44" width="34" height="34" fill="#0a0a0a"/>
+      <rect x="44" y="44" width="34" height="34" fill="#fff" stroke="#0a0a0a" stroke-width="2.5"/>
+      <text x="61" y="61" font-family="Georgia,serif" font-size="21" font-weight="bold" fill="#0a0a0a" text-anchor="middle" dominant-baseline="central">E</text>
+      <rect x="2" y="2" width="76" height="76" fill="none" stroke="#0a0a0a" stroke-width="3.5"/>
+    </svg>
+    <span class="logo-name">PuzzledEra</span>
+  </a>
+  <a href="/" class="back-link">← all puzzles</a>
+</header>
+
+<!-- ═══ PUZZLE PAGE ═══ -->
+<div class="puzzle-page">
+
+  <!-- Grid column -->
+  <div class="grid-column">
+    <div class="puzzle-title-bar">
+      <div class="puzzle-name">Puzz4</div>
+      <div class="puzzle-byline">13×13 &nbsp;·&nbsp; Hip-Hop &amp; Culture</div>
+    </div>
+
+    <div class="clue-banner" id="clue-banner">
+      <span class="clue-banner-num" id="banner-num">—</span>
+      <span id="banner-text">Click a square to start solving.</span>
+    </div>
+
+    <div class="cw-grid" id="cw-grid"></div>
+
+    <div class="toolbar">
+      <button class="tool-btn" onclick="checkPuzzle()">Check</button>
+      <button class="tool-btn" onclick="revealCell()">Reveal Letter</button>
+      <button class="tool-btn" onclick="clearPuzzle()">Clear</button>
+    </div>
+  </div>
+
+  <!-- Clues column -->
+  <div class="clues-column">
+    <div class="clue-list">
+      <div class="clue-list-title">Across</div>
+      <div id="across-list"></div>
+    </div>
+    <div class="clue-list">
+      <div class="clue-list-title">Down</div>
+      <div id="down-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Congrats overlay -->
+<div class="congrats" id="congrats">
+  <div class="congrats-box">
+    <div class="congrats-title">Solved! 🎉</div>
+    <div class="congrats-sub">You filled it in. Nice work.</div>
+    <button class="tool-btn primary" onclick="document.getElementById('congrats').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<footer class="site-footer">PuzzledEra &nbsp;·&nbsp; Crosswords for the culture</footer>
+
+<script>
+// ═══ PUZZLE DATA ═══
+const WIDTH = 13, HEIGHT = 13;
+
+const SOLUTION = [
+  "CHAD.CDS.DEBT",
+  "RAJA.ROO.OGRE",
+  "AHAB.ESP.UGOD",
+  "MARACA.RNB...",
+  "...BAMBAATAA.",
+  "ROBYN.ANT.IRA",
+  "END..ONO..NIL",
+  "MEA.ARK.GATES",
+  ".SYLVESTER...",
+  "...MEG.EMINEM",
+  "JEFF.ATE.SELA",
+  "ARIA.NUN.TIER",
+  "GETO.ORA.ALEC"
+].join("");
+
+const ACROSS = {
+  1:"Central African country",5:"Burnable items",8:"Money owed",
+  12:"Monarch in India",13:"Kanga's playful joey",14:"Shrek, for example",
+  15:"Obsessed captain",16:"Sixth sense, abbr.",17:"Wu-Tang Clan member born Lamont Hawkins",
+  18:"Shaker in a salsa band",20:"Soul or pop music genre, abbr.",22:"Hip-hop pioneer",
+  26:"Rihanna's first name",29:"\"___ Man\" (Edwards' nickname)",30:"Tax-free investment account",
+  32:"Finish or conclusion",33:"John Lennon's wife",34:"Brand deals for student-athletes",
+  35:"\"Cry ___ ___ River\"; Justin Timberlake song",36:"Biblical boat",37:"Microsoft co-founder",
+  39:"Looney Tunes cat",42:"___ Thee Stallion",43:"'8 Mile' rapper",
+  47:"Amazon CEO Bezos",50:"\"___ and left no crumbs\"",52:"Ward of \"FBI\"",
+  53:"Operatic solo",54:"Woman in a convent",55:"Level in a system",
+  56:"Bushwick Bill crew prefix",57:"Rita of pop music",58:"Baldwin of 30 Rock"
+};
+
+const DOWN = {
+  1:"Study intensively",2:"Texted laughter",3:"Slightly open",4:"\"Suge\" rapper",
+  5:"Wu-Tang's financial philosophy",6:"Uno, ___, tres, cuatro...",7:"Highest voice in the room",
+  8:"Reasonable ___ (Jay-Z's 1996 classic)",9:"Protein-packed shell",10:"Dude or pal",
+  11:"Lasso on Apple TV+",19:"Tin container",21:"Jazz great King ___",
+  23:"Lloyd ___ (G-Unit member)",24:"\"It ___ Hard to Tell\" (Nas)",25:"India.___ ('Brown Skin' singer)",
+  26:"\"Losing My Religion\" band",27:"Singles in the stack",28:"\"Irreplaceable\" album",
+  31:"Singer Green and others",33:"Pizza topping herb",36:"Fifth ___ (NYC luxury strip)",
+  37:"Emerald or amethyst",38:"Record label founded by Clive Davis",40:"\"Party Rock Anthem\" group",
+  41:"R&B singer known for \"Lovergirl\"",44:"Armstrong's first name",45:"'Euphoria' actress Barbie ___",
+  46:"Jacobs of fashion",47:"Military drama that launched NCIS",48:"Before, poetically",
+  49:"In good shape",51:"Journalist Katy"
+};
+
+// ═══ STATE ═══
+let userGrid = Array(WIDTH * HEIGHT).fill("");
+let cellNums = {};       // idx -> number
+let acrossMap = {};      // idx -> clue number
+let downMap = {};        // idx -> clue number
+let selectedIdx = -1;
+let direction = "across";
+
+// ═══ INIT: number cells ═══
+function isBlack(r, c) { return SOLUTION[r*WIDTH+c] === '.'; }
+
+function initNumbering() {
+  let num = 1;
+  for (let r = 0; r < HEIGHT; r++) {
+    for (let c = 0; c < WIDTH; c++) {
+      if (isBlack(r,c)) continue;
+      const idx = r*WIDTH+c;
+      const startsAcross = (c===0 || isBlack(r,c-1)) && (c+1<WIDTH && !isBlack(r,c+1));
+      const startsDown   = (r===0 || isBlack(r-1,c)) && (r+1<HEIGHT && !isBlack(r+1,c));
+      if (startsAcross || startsDown) { cellNums[idx] = num; num++; }
+    }
+  }
+  // Build acrossMap / downMap: for each cell, which clue number does it belong to?
+  for (let r = 0; r < HEIGHT; r++) {
+    for (let c = 0; c < WIDTH; c++) {
+      if (isBlack(r,c)) continue;
+      const idx = r*WIDTH+c;
+      // across: scan left to find start
+      let cc = c;
+      while (cc > 0 && !isBlack(r, cc-1)) cc--;
+      const aIdx = r*WIDTH+cc;
+      if (cellNums[aIdx] && ACROSS[cellNums[aIdx]]) acrossMap[idx] = cellNums[aIdx];
+      // down: scan up to find start
+      let rr = r;
+      while (rr > 0 && !isBlack(rr-1, c)) rr--;
+      const dIdx = rr*WIDTH+c;
+      if (cellNums[dIdx] && DOWN[cellNums[dIdx]]) downMap[idx] = cellNums[dIdx];
+    }
+  }
+}
+
+// ═══ RENDER GRID ═══
+function renderGrid() {
+  const grid = document.getElementById('cw-grid');
+  grid.style.gridTemplateColumns = `repeat(${WIDTH}, 42px)`;
+  grid.innerHTML = '';
+  for (let r = 0; r < HEIGHT; r++) {
+    for (let c = 0; c < WIDTH; c++) {
+      const idx = r*WIDTH+c;
+      const cell = document.createElement('div');
+      cell.className = 'cw-cell' + (isBlack(r,c) ? ' black' : '');
+      cell.dataset.idx = idx;
+      if (!isBlack(r,c)) {
+        if (cellNums[idx]) {
+          const num = document.createElement('span');
+          num.className = 'cell-num';
+          num.textContent = cellNums[idx];
+          cell.appendChild(num);
+        }
+        const inp = document.createElement('input');
+        inp.className = 'cell-input';
+        inp.maxLength = 1;
+        inp.autocomplete = 'off';
+        inp.dataset.idx = idx;
+        inp.addEventListener('mousedown', e => { e.preventDefault(); selectCell(idx); });
+        inp.addEventListener('keydown', e => handleKey(e, idx));
+        inp.addEventListener('input', e => handleInput(e, idx));
+        cell.appendChild(inp);
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// ═══ RENDER CLUES ═══
+function renderClues() {
+  const aList = document.getElementById('across-list');
+  const dList = document.getElementById('down-list');
+  aList.innerHTML = '';
+  dList.innerHTML = '';
+  Object.keys(ACROSS).sort((a,b)=>+a-+b).forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'clue-item';
+    div.id = `ac-${n}`;
+    div.innerHTML = `<span class="clue-num">${n}</span><span class="clue-text">${ACROSS[n]}</span>`;
+    div.addEventListener('click', () => jumpToClue(+n, 'across'));
+    aList.appendChild(div);
+  });
+  Object.keys(DOWN).sort((a,b)=>+a-+b).forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'clue-item';
+    div.id = `dn-${n}`;
+    div.innerHTML = `<span class="clue-num">${n}</span><span class="clue-text">${DOWN[n]}</span>`;
+    div.addEventListener('click', () => jumpToClue(+n, 'down'));
+    dList.appendChild(div);
+  });
+}
+
+// ═══ SELECTION ═══
+function selectCell(idx, newDir) {
+  const r = Math.floor(idx/WIDTH), c = idx%WIDTH;
+  if (isBlack(r,c)) return;
+
+  // Toggle direction if same cell clicked
+  if (idx === selectedIdx && !newDir) {
+    direction = direction === 'across' ? 'down' : 'across';
+  } else if (newDir) {
+    direction = newDir;
+  }
+
+  // Verify direction is valid for this cell, flip if not
+  if (direction === 'across' && !acrossMap[idx]) direction = 'down';
+  if (direction === 'down'   && !downMap[idx])   direction = 'across';
+
+  selectedIdx = idx;
+  refreshHighlights();
+  focusCell(idx);
+  updateBanner();
+}
+
+function jumpToClue(num, dir) {
+  // Find first cell of this clue
+  for (let i = 0; i < WIDTH*HEIGHT; i++) {
+    if (cellNums[i] === num) { selectCell(i, dir); return; }
+  }
+}
+
+function focusCell(idx) {
+  const inp = document.querySelector(`.cell-input[data-idx="${idx}"]`);
+  if (inp) inp.focus();
+}
+
+function refreshHighlights() {
+  document.querySelectorAll('.cw-cell').forEach(el => el.classList.remove('selected','highlighted'));
+  if (selectedIdx < 0) return;
+  // Highlight word
+  const wordCells = getWordCells(selectedIdx, direction);
+  wordCells.forEach(i => {
+    const el = document.querySelector(`.cw-cell[data-idx="${i}"]`);
+    if (el) el.classList.add('highlighted');
+  });
+  // Highlight selected
+  const selEl = document.querySelector(`.cw-cell[data-idx="${selectedIdx}"]`);
+  if (selEl) selEl.classList.add('selected');
+
+  // Highlight clue
+  document.querySelectorAll('.clue-item').forEach(el => el.classList.remove('active'));
+  const clueNum = direction === 'across' ? acrossMap[selectedIdx] : downMap[selectedIdx];
+  if (clueNum) {
+    const clueEl = document.getElementById(direction === 'across' ? `ac-${clueNum}` : `dn-${clueNum}`);
+    if (clueEl) { clueEl.classList.add('active'); clueEl.scrollIntoView({block:'nearest'}); }
+  }
+}
+
+function getWordCells(idx, dir) {
+  const r0 = Math.floor(idx/WIDTH), c0 = idx%WIDTH;
+  const cells = [];
+  if (dir === 'across') {
+    let c = c0;
+    while (c > 0 && !isBlack(r0,c-1)) c--;
+    while (c < WIDTH && !isBlack(r0,c)) { cells.push(r0*WIDTH+c); c++; }
+  } else {
+    let r = r0;
+    while (r > 0 && !isBlack(r-1,c0)) r--;
+    while (r < HEIGHT && !isBlack(r,c0)) { cells.push(r*WIDTH+c0); r++; }
+  }
+  return cells;
+}
+
+function updateBanner() {
+  const clueNum = direction === 'across' ? acrossMap[selectedIdx] : downMap[selectedIdx];
+  const clueText = clueNum ? (direction === 'across' ? ACROSS[clueNum] : DOWN[clueNum]) : '';
+  document.getElementById('banner-num').textContent = clueNum ? `${clueNum} ${direction.toUpperCase()}` : '—';
+  document.getElementById('banner-text').textContent = clueText || 'Select a square';
+}
+
+// ═══ INPUT HANDLING ═══
+function handleInput(e, idx) {
+  const inp = e.target;
+  const val = inp.value.replace(/[^a-zA-Z]/g,'').toUpperCase().slice(-1);
+  inp.value = val;
+  userGrid[idx] = val;
+  if (val) advanceCursor(idx);
+  checkComplete();
+}
+
+function handleKey(e, idx) {
+  const r = Math.floor(idx/WIDTH), c = idx%WIDTH;
+  if (e.key === 'ArrowRight') { e.preventDefault(); selectCell(idx, 'across'); if (direction==='across') moveTo(r,c+1,'across'); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); selectCell(idx, 'across'); if (direction==='across') moveTo(r,c-1,'across'); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); selectCell(idx, 'down'); if (direction==='down') moveTo(r+1,c,'down'); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); selectCell(idx, 'down'); if (direction==='down') moveTo(r-1,c,'down'); }
+  else if (e.key === 'Backspace') {
+    e.preventDefault();
+    const inp = document.querySelector(`.cell-input[data-idx="${idx}"]`);
+    if (inp && inp.value) { inp.value=''; userGrid[idx]=''; }
+    else { retreatCursor(idx); }
+  }
+  else if (e.key === 'Tab') {
+    e.preventDefault();
+    nextWord(e.shiftKey);
+  }
+}
+
+function moveTo(r, c, dir) {
+  if (r>=0&&r<HEIGHT&&c>=0&&c<WIDTH&&!isBlack(r,c)) selectCell(r*WIDTH+c, dir);
+}
+
+function advanceCursor(idx) {
+  const r = Math.floor(idx/WIDTH), c = idx%WIDTH;
+  if (direction==='across') { for(let cc=c+1;cc<WIDTH;cc++) if(!isBlack(r,cc)){selectCell(r*WIDTH+cc,'across');return;} }
+  else { for(let rr=r+1;rr<HEIGHT;rr++) if(!isBlack(rr,c)){selectCell(rr*WIDTH+c,'down');return;} }
+}
+
+function retreatCursor(idx) {
+  const r = Math.floor(idx/WIDTH), c = idx%WIDTH;
+  if (direction==='across') { for(let cc=c-1;cc>=0;cc--) if(!isBlack(r,cc)){selectCell(r*WIDTH+cc,'across');const i=document.querySelector(`.cell-input[data-idx="${r*WIDTH+cc}"]`);if(i){i.value='';userGrid[r*WIDTH+cc]='';} return;} }
+  else { for(let rr=r-1;rr>=0;rr--) if(!isBlack(rr,c)){selectCell(rr*WIDTH+c,'down');const i=document.querySelector(`.cell-input[data-idx="${rr*WIDTH+c}"]`);if(i){i.value='';userGrid[rr*WIDTH+c]='';} return;} }
+}
+
+function nextWord(reverse) {
+  // Cycle through clues in order
+  const clueNums = [...Object.keys(ACROSS).map(n=>({n:+n,dir:'across'})), ...Object.keys(DOWN).map(n=>({n:+n,dir:'down'}))];
+  clueNums.sort((a,b) => a.n-b.n || (a.dir==='across'?-1:1));
+  const cur = direction==='across' ? acrossMap[selectedIdx] : downMap[selectedIdx];
+  let curIdx = clueNums.findIndex(x=>x.n===cur&&x.dir===direction);
+  curIdx = (curIdx + (reverse?-1:1) + clueNums.length) % clueNums.length;
+  const next = clueNums[curIdx];
+  jumpToClue(next.n, next.dir);
+}
+
+// ═══ CHECK / REVEAL / CLEAR ═══
+function checkPuzzle() {
+  document.querySelectorAll('.cw-cell').forEach(el => {
+    el.classList.remove('correct','wrong');
+    const idx = +el.dataset.idx;
+    if (isBlack(Math.floor(idx/WIDTH), idx%WIDTH)) return;
+    const inp = el.querySelector('.cell-input');
+    if (!inp || !inp.value) return;
+    if (inp.value === SOLUTION[idx]) el.classList.add('correct');
+    else el.classList.add('wrong');
+  });
+}
+
+function revealCell() {
+  if (selectedIdx < 0) return;
+  const inp = document.querySelector(`.cell-input[data-idx="${selectedIdx}"]`);
+  if (!inp) return;
+  inp.value = SOLUTION[selectedIdx];
+  userGrid[selectedIdx] = SOLUTION[selectedIdx];
+  const el = document.querySelector(`.cw-cell[data-idx="${selectedIdx}"]`);
+  if (el) { el.classList.remove('wrong'); el.classList.add('correct'); }
+  advanceCursor(selectedIdx);
+  checkComplete();
+}
+
+function clearPuzzle() {
+  document.querySelectorAll('.cell-input').forEach(inp => { inp.value=''; });
+  document.querySelectorAll('.cw-cell').forEach(el => el.classList.remove('correct','wrong'));
+  userGrid = Array(WIDTH*HEIGHT).fill('');
+}
+
+function checkComplete() {
+  for (let i = 0; i < WIDTH*HEIGHT; i++) {
+    if (isBlack(Math.floor(i/WIDTH), i%WIDTH)) continue;
+    if (userGrid[i] !== SOLUTION[i]) return;
+  }
+  setTimeout(() => document.getElementById('congrats').classList.add('show'), 300);
+}
+
+// ═══ BOOT ═══
+initNumbering();
+renderGrid();
+renderClues();
+</script>
+</body>
+</html>
